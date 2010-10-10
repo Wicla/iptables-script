@@ -36,12 +36,6 @@ $IPTABLES -P FORWARD DROP
 # Accept all connections which is already established.
 $IPTABLES -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
 
-# Accept SSH connections
-$IPTABLES -A INPUT -p tcp --dport 22 -d $SERVER_IP -j ACCEPT
-
-# Accept 193.11.164.0/27
-$IPTABLES -A INPUT -s 193.11.164.0/27 -d $SERVER_IP -j ACCEPT
-
 # Accept trafic from loopback
 $IPTABLES -A INPUT -s 127.0.0.1 -i lo -j ACCEPT
 
