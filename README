@@ -1,0 +1,3 @@
+A simple script which uses iptables to "secure" machines. It uses default deny on traffic. Array defines which TCP/UDP-ports should be opened.
+Allowed incoming (INPUT): related, icmp
+Allowed outging (OUTPUT): related, dns (53), ssh (22), ftp(-data) (20-21), HTTP(s) (80, 445), icmp.
