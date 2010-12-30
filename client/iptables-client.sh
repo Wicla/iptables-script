@@ -63,8 +63,8 @@ BCAST=($(ifconfig $IF)); BCAST=$(echo ${IP[7]#*:})
 # * output  -- Logs OUTPUT
 LOGGING=true
 if [ $LOGGING = true \
-  -o $(echo $LOGGING | tr [:upper:] [:lower:]) = $(echo INPUT | tr [:upper:] [:lower:]) \
-  -o $(echo $LOGGING | tr [:upper:] [:lower:]) = $(echo OUTPUT | tr [:upper:] [:lower:]) ]; then
+  -o $(echo $LOGGING | tr [:lower:] [:upper:]) = INPUT \
+  -o $(echo $LOGGING | tr [:lower:] [:upper:]) = OUTPUT ]; then
 # Chain names for LOGGING
   LOGINPUTCHAIN=LOGINPUT
   LOGOUTPUTCHAIN=LOGOUTPUT
@@ -98,7 +98,7 @@ $IPTABLES -P FORWARD DROP
 ####################### CUSTOM DEFINED CHAINS ##################################
 
 # If LOGGING is true or matches 'INPUT' - INPUT connections are passed through this chain
-if [ $LOGGING = true -o $(echo $LOGGING | tr [:upper:] [:lower:]) = $(echo INPUT | tr [:upper:] [:lower:]) ]; then
+if [ $LOGGING = true -o $(echo $LOGGING | tr [:lower:] [:upper:]) = INPUT ]; then
   $IPTABLES -N $LOGINPUTCHAIN
   $IPTABLES -A $LOGINPUTCHAIN -p tcp -m limit --limit $LOGLIMIT --limit-burst $LOGLIMITBURST -j LOG --log-prefix 'INPUT TCP: '
   $IPTABLES -A $LOGINPUTCHAIN -p udp -m limit --limit $LOGLIMIT --limit-burst $LOGLIMITBURST -j LOG --log-prefix 'INPUT UDP: '
@@ -106,7 +106,7 @@ if [ $LOGGING = true -o $(echo $LOGGING | tr [:upper:] [:lower:]) = $(echo INPUT
 fi
 
 # If LOGGING is true or matches 'OUTPUT' - OUTPUT connections are passed through this chain
-if [ $LOGGING = true -o $(echo $LOGGING | tr [:upper:] [:lower:]) = $(echo OUTPUT | tr [:upper:] [:lower:]) ]; then
+if [ $LOGGING = true -o $(echo $LOGGING | tr [:lower:] [:upper:]) = OUTPUT ]; then
   $IPTABLES -N $LOGOUTPUTCHAIN
   $IPTABLES -A $LOGOUTPUTCHAIN -p tcp -m limit --limit $LOGLIMIT --limit-burst $LOGLIMITBURST -j LOG --log-prefix 'OUTPUT TCP: '
   $IPTABLES -A $LOGOUTPUTCHAIN -p udp -m limit --limit $LOGLIMIT --limit-burst $LOGLIMITBURST -j LOG --log-prefix 'OUTPUT UDP: '
@@ -137,7 +137,7 @@ $IPTABLES -A INPUT -p icmp --icmp-type 8 -d $IP -j ACCEPT
 $IPTABLES -A INPUT -m pkttype --pkt-type broadcast -j DROP
 
 # Check if INPUT should be logged
-if [ $LOGGING = true -o $(echo $LOGGING | tr [:upper:] [:lower:]) = $(echo INPUT | tr [:upper:] [:lower:]) ]; then
+if [ $LOGGING = true -o $(echo $LOGGING | tr [:lower:] [:upper:]) = INPUT ]; then
   $IPTABLES -A INPUT -j $LOGINPUTCHAIN
 fi
 
@@ -183,7 +183,7 @@ $IPTABLES -A OUTPUT -d $BCAST -j ACCEPT
 $IPTABLES -A OUTPUT -d 255.255.255.255 -j ACCEPT
 
 # Check if OUTPUT should be logged
-if [ $LOGGING = true -o $(echo $LOGGING | tr [:upper:] [:lower:]) = $(echo OUTPUT | tr [:upper:] [:lower:]) ]; then
+if [ $LOGGING = true -o $(echo $LOGGING | tr [:lower:] [:upper:]) = OUTPUT ]; then
   $IPTABLES -A OUTPUT -j $LOGOUTPUTCHAIN
 fi
 
