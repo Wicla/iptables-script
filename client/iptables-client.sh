@@ -56,6 +56,7 @@ LIMIT="-m hashlimit --hashlimit 10/minute --hashlimit-burst 10 --hashlimit-mode 
 IP=($(ifconfig $IF)); IP=$(echo ${IP[6]#*:})
 BCAST=($(ifconfig $IF)); BCAST=$(echo ${IP[7]#*:})
 
+# LOGGING definies if blocked traffic should be logged. Rate limited.
 LOGGING=true
 LOGLIMIT='-m limit --limit 1/min --limit-burst 1'
 
