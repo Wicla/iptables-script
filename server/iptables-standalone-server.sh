@@ -55,15 +55,15 @@ IPTABLES=/sbin/iptables
 ####################### PREPARE FOR CONFIGURATION ##############################
 
 # Flush (remove) all current iptables rules
-${IPTABLES} -F
+$IPTABLES -F
 
 # Remove all user-defined chains
-${IPTABLES} -X
+$IPTABLES -X
 
 # Set defauly policy - Drop everything
-${IPTABLES} -P INPUT DROP
-${IPTABLES} -P OUTPUT DROP
-${IPTABLES} -P FORWARD DROP
+$IPTABLES -P INPUT DROP
+$IPTABLES -P OUTPUT DROP
+$IPTABLES -P FORWARD DROP
 
 
 ####################### CUSTOM DEFINED CHAINS ##################################
@@ -71,36 +71,36 @@ ${IPTABLES} -P FORWARD DROP
 # Protect against SSH bruteforce.
 # More than 5 connections on the ssh port and it gets blocked for 60 seconds
 SSHCHAIN=PROTECTSSH
-${IPTABLES} -N $SSHCHAIN
-${IPTABLES} -A $SSHCHAIN -p tcp --dport 22 -m state --state NEW -m recent --update --seconds 60 --hitcount 5 --name SSHBLOCK --rsource -j DROP
-${IPTABLES} -A $SSHCHAIN -p tcp --dport 22 -m state --state NEW -m recent --set --name SSHBLOCK --rsource
-${IPTABLES} -A $SSHCHAIN -p tcp --dport 22 -j ACCEPT
+$IPTABLES -N $SSHCHAIN
+$IPTABLES -A $SSHCHAIN -p tcp --dport 22 -m state --state NEW -m recent --update --seconds 60 --hitcount 5 --name SSHBLOCK --rsource -j DROP
+$IPTABLES -A $SSHCHAIN -p tcp --dport 22 -m state --state NEW -m recent --set --name SSHBLOCK --rsource
+$IPTABLES -A $SSHCHAIN -p tcp --dport 22 -j ACCEPT
 
 ####################### IPTABLES INPUT RULES ###################################
 
 # Accept all incomming connections which is related or already established
-${IPTABLES} -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+$IPTABLES -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
 
 # Accept connections from loopback
-${IPTABLES} -A INPUT -i lo -j ACCEPT
+$IPTABLES -A INPUT -i lo -j ACCEPT
 
 # Send SSH connections to $SSHCHAIN chain.
-${IPTABLES} -A INPUT -p tcp --dport 22 -d ${IP} -j $SSHCHAIN
+$IPTABLES -A INPUT -p tcp --dport 22 -d $IP -j $SSHCHAIN
 
 # Accept all custom TCP-ports defined by `IN_TCP_PORTS'
 for TCPPORT in ${IN_TCP_PORTS[@]}; do
-  ${IPTABLES} -A INPUT -p tcp --dport ${TCPPORT} -d ${IP} -j ACCEPT
+  $IPTABLES -A INPUT -p tcp --dport $TCPPORT -d $IP -j ACCEPT
 done
 
 # Accept all custom UDP-ports defined by `IN_UDP_PORTS'
 for UDPPORT in ${IN_UDP_PORTS[@]}; do
-  ${IPTABLES} -A INPUT -p udp --dport ${UDPPORT} -d ${IP} -j ACCEPT
+  $IPTABLES -A INPUT -p udp --dport $UDPPORT -d $IP -j ACCEPT
 done
 
 # Accept incomming icmp-requests
-${IPTABLES} -A INPUT -p icmp --icmp-type 8 -d ${IP} -j ACCEPT
+$IPTABLES -A INPUT -p icmp --icmp-type 8 -d $IP -j ACCEPT
 # Block incomming brodcast
-${IPTABLES} -A INPUT -m pkttype --pkt-type broadcast -j DROP
+$IPTABLES -A INPUT -m pkttype --pkt-type broadcast -j DROP
 
 if [ $LOGGING = true ]; then
   ${IPTABLES} -A INPUT ${LOGLIMIT} -j LOG
@@ -108,44 +108,44 @@ fi
 
 
 # Be polite and reject packages instead of just dropping them, to a limit.
-${IPTABLES} -A INPUT -p icmp ${LIMIT} -j REJECT --reject-with icmp-admin-prohibited
-${IPTABLES} -A INPUT -p udp ${LIMIT} -j REJECT --reject-with icmp-port-unreachable
-${IPTABLES} -A INPUT -p tcp ${LIMIT} -j REJECT --reject-with tcp-reset
+$IPTABLES -A INPUT -p icmp $LIMIT -j REJECT --reject-with icmp-admin-prohibited
+$IPTABLES -A INPUT -p udp $LIMIT -j REJECT --reject-with icmp-port-unreachable
+$IPTABLES -A INPUT -p tcp $LIMIT -j REJECT --reject-with tcp-reset
 
 
 ####################### IPTABLES OUTPUT RULES ##################################
 
 # Accept all outgoing connections which is established or already established.
-${IPTABLES} -A OUTPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+$IPTABLES -A OUTPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
 
 # Accept outgoing connections from lo interface
-${IPTABLES} -A OUTPUT -o lo -j ACCEPT
+$IPTABLES -A OUTPUT -o lo -j ACCEPT
 
 # Accept dns lookups (udp and tcp)
-${IPTABLES} -A OUTPUT -p tcp --dport 53 -s ${IP} -j ACCEPT
-${IPTABLES} -A OUTPUT -p udp --dport 53 -s ${IP} -j ACCEPT
+$IPTABLES -A OUTPUT -p tcp --dport 53 -s $IP -j ACCEPT
+$IPTABLES -A OUTPUT -p udp --dport 53 -s $IP -j ACCEPT
 
 # Accept outgoing SSH, HTTP and FTP connections.
-${IPTABLES} -A OUTPUT -p tcp --dport 22 -s ${IP} -j ACCEPT
-${IPTABLES} -A OUTPUT -p tcp --dport 20:21 -s ${IP} -j ACCEPT
-${IPTABLES} -A OUTPUT -p tcp -m multiport --dports 80,443 -s ${IP} -j ACCEPT
+$IPTABLES -A OUTPUT -p tcp --dport 22 -s $IP -j ACCEPT
+$IPTABLES -A OUTPUT -p tcp --dport 20:21 -s $IP -j ACCEPT
+$IPTABLES -A OUTPUT -p tcp -m multiport --dports 80,443 -s $IP -j ACCEPT
 
 # Accept all custom TCP-ports defined by `OUT_UDP_PORTS'
 for TCPPORT in ${OUT_TCP_PORTS[@]}; do
-  ${IPTABLES} -A OUTPUT -p tcp --dport ${TCPPORT} -s ${IP} -j ACCEPT
+  $IPTABLES -A OUTPUT -p tcp --dport $TCPPORT -s $IP -j ACCEPT
 done
 
 # Accept all custom UDP-ports defined by `OUT_UDP_PORTS'
 for UDPPORT in ${OUT_UDP_PORTS[@]}; do
-  ${IPTABLES} -A OUTPUT -p udp --dport ${UDPPORT} -s ${IP} -j ACCEPT
+  $IPTABLES -A OUTPUT -p udp --dport $UDPPORT -s $IP -j ACCEPT
 done
 
 # Accept outgoing icmp-requests
-${IPTABLES} -A OUTPUT -p icmp --icmp-type 8 -s ${IP} -j ACCEPT
+$IPTABLES -A OUTPUT -p icmp --icmp-type 8 -s $IP -j ACCEPT
 
 # Accept outgoing broadcast messages
-${IPTABLES} -A OUTPUT -d ${BCAST} -j ACCEPT
-${IPTABLES} -A OUTPUT -d 255.255.255.255 -j ACCEPT
+$IPTABLES -A OUTPUT -d $BCAST -j ACCEPT
+$IPTABLES -A OUTPUT -d 255.255.255.255 -j ACCEPT
 
 if [ $LOGGING = true ]; then
   ${IPTABLES} -A OUTPUT ${LOGLIMIT} -j LOG
