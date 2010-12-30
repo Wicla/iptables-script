@@ -57,6 +57,7 @@ IP=($(ifconfig $IF)); IP=$(echo ${IP[6]#*:})
 BCAST=($(ifconfig $IF)); BCAST=$(echo ${IP[7]#*:})
 
 # LOGGING definies if blocked traffic should be logged. Rate limited.
+# If LOGGING equals true (LOGGING=true) traffic is being logged.
 LOGGING=true
 LOGLIMIT='-m limit --limit 1/min --limit-burst 1'
 
@@ -109,7 +110,7 @@ ${IPTABLES} -A INPUT -p icmp --icmp-type 8 -d ${IP} -j ACCEPT
 # Block incomming brodcast
 ${IPTABLES} -A INPUT -m pkttype --pkt-type broadcast -j DROP
 
-if [ $LOGGING ]; then
+if [ $LOGGING = true ]; then
   ${IPTABLES} -A INPUT ${LOGLIMIT} -j LOG
 fi
 
@@ -154,7 +155,7 @@ ${IPTABLES} -A OUTPUT -p icmp --icmp-type 8 -s ${IP} -j ACCEPT
 ${IPTABLES} -A OUTPUT -d ${BCAST} -j ACCEPT
 ${IPTABLES} -A OUTPUT -d 255.255.255.255 -j ACCEPT
 
-if [ $LOGGING ]; then
+if [ $LOGGING = true ]; then
   ${IPTABLES} -A OUTPUT ${LOGLIMIT} -j LOG
 fi
 
