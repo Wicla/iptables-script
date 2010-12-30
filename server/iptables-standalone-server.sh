@@ -72,7 +72,7 @@ $IPTABLES -F
 # Remove all user-defined chains
 $IPTABLES -X
 
-# Set defauly policy - Drop everything
+# Set default policy - Drop everything
 $IPTABLES -P INPUT DROP
 $IPTABLES -P OUTPUT DROP
 $IPTABLES -P FORWARD DROP
