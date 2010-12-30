@@ -1,3 +1,7 @@
-A simple script which uses iptables to "secure" machines. It uses default deny on traffic. Array defines which TCP/UDP-ports should be opened.
-Allowed incoming (INPUT): related, icmp
-Allowed outging (OUTPUT): related, dns (53), ssh (22), ftp(-data) (20-21), HTTP(s) (80, 445), icmp.
+This project contains various IPTables-scripts.
+Currently they're seperated in two different directories:
+ * client
+ * server
+
+There're at least two branches, main and locallyModified.
+locallyModified contains a version where ports are opened.
