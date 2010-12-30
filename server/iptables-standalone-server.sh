@@ -32,19 +32,26 @@ OUT_TCP_PORTS=( )
 OUT_UDP_PORTS=( )
 
 # Used for reject. Reject first 10 packets each 10 minute, then just drop them. 
-LIMIT="-m hashlimit --hashlimit 10/minute --hashlimit-burst 10 --hashlimit-mode srcip --hashlimit-name limreject" 
+LIMIT="-m hashlimit --hashlimit 10/minute --hashlimit-burst 10 --hashlimit-mode srcip --hashlimit-name limreject"
 
 # IP contains the IP-number of interface `IF'
 # BCAST contains the broadcast adress of interface `IF'
 IP=($(ifconfig $IF)); IP=$(echo ${IP[6]#*:})
 BCAST=($(ifconfig $IF)); BCAST=$(echo ${IP[7]#*:})
 
-# LOGGING definies if blocked traffic should be logged. Rate limited.
-# If LOGGING equals true (LOGGING=true) traffic is being logged.
+# LOGGING defines if blocked traffic should be logged.
+# Currently it can be any of the following values:
+# * true    -- Logs both INPUT and OUTPUT
+# * input   -- Logs INPUT
+# * output  -- Logs OUTPUT
 LOGGING=true
-if [ $LOGGING = true ]; then
+if [ $LOGGING = true \
+  -o $(echo $LOGGING | tr [:upper:] [:lower:]) = $(echo INPUT | tr [:upper:] [:lower:]) \
+  -o $(echo $LOGGING | tr [:upper:] [:lower:]) = $(echo OUTPUT | tr [:upper:] [:lower:]) ]; then
+# Chain names for LOGGING
   LOGINPUTCHAIN=LOGINPUT
   LOGOUTPUTCHAIN=LOGOUTPUT
+# Loglimit and loglimitburst
   LOGLIMIT='1/min'
   LOGLIMITBURST='1'
 fi
@@ -81,13 +88,16 @@ $IPTABLES -A $SSHCHAIN -p tcp --dport 22 -m state --state NEW -m recent --update
 $IPTABLES -A $SSHCHAIN -p tcp --dport 22 -m state --state NEW -m recent --set --name SSHBLOCK --rsource
 $IPTABLES -A $SSHCHAIN -p tcp --dport 22 -j ACCEPT
 
-# If LOGGING is true connections are passed through this chain
-if [ $LOGGING = true ]; then
+# If LOGGING is true or matches 'INPUT' - INPUT connections are passed through this chain
+if [ $LOGGING = true -o $(echo $LOGGING | tr [:upper:] [:lower:]) = $(echo INPUT | tr [:upper:] [:lower:]) ]; then
   $IPTABLES -N $LOGINPUTCHAIN
   $IPTABLES -A $LOGINPUTCHAIN -p tcp -m limit --limit $LOGLIMIT --limit-burst $LOGLIMITBURST -j LOG --log-prefix 'INPUT TCP: '
   $IPTABLES -A $LOGINPUTCHAIN -p udp -m limit --limit $LOGLIMIT --limit-burst $LOGLIMITBURST -j LOG --log-prefix 'INPUT UDP: '
   $IPTABLES -A $LOGINPUTCHAIN -p icmp -m limit --limit $LOGLIMIT --limit-burst $LOGLIMITBURST -j LOG --log-prefix 'INPUT ICMP: '
-  
+fi
+
+# If LOGGING is true or matches 'OUTPUT' - OUTPUT connections are passed through this chain
+if [ $LOGGING = true -o $(echo $LOGGING | tr [:upper:] [:lower:]) = $(echo OUTPUT | tr [:upper:] [:lower:]) ]; then
   $IPTABLES -N $LOGOUTPUTCHAIN
   $IPTABLES -A $LOGOUTPUTCHAIN -p tcp -m limit --limit $LOGLIMIT --limit-burst $LOGLIMITBURST -j LOG --log-prefix 'OUTPUT TCP: '
   $IPTABLES -A $LOGOUTPUTCHAIN -p udp -m limit --limit $LOGLIMIT --limit-burst $LOGLIMITBURST -j LOG --log-prefix 'OUTPUT UDP: '
@@ -120,7 +130,8 @@ $IPTABLES -A INPUT -p icmp --icmp-type 8 -d $IP -j ACCEPT
 # Block incomming brodcast
 $IPTABLES -A INPUT -m pkttype --pkt-type broadcast -j DROP
 
-if [ $LOGGING = true ]; then
+# Check if INPUT should be logged
+if [ $LOGGING = true -o $(echo $LOGGING | tr [:upper:] [:lower:]) = $(echo INPUT | tr [:upper:] [:lower:]) ]; then
   $IPTABLES -A INPUT -j $LOGINPUTCHAIN
 fi
 
@@ -165,7 +176,8 @@ $IPTABLES -A OUTPUT -p icmp --icmp-type 8 -s $IP -j ACCEPT
 $IPTABLES -A OUTPUT -d $BCAST -j ACCEPT
 $IPTABLES -A OUTPUT -d 255.255.255.255 -j ACCEPT
 
-if [ $LOGGING = true ]; then
+# Check if OUTPUT should be logged
+if [ $LOGGING = true -o $(echo $LOGGING | tr [:upper:] [:lower:]) = $(echo OUTPUT | tr [:upper:] [:lower:]) ]; then
   $IPTABLES -A OUTPUT -j $LOGOUTPUTCHAIN
 fi
 
