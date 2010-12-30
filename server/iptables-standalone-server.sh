@@ -42,7 +42,12 @@ BCAST=($(ifconfig $IF)); BCAST=$(echo ${IP[7]#*:})
 # LOGGING definies if blocked traffic should be logged. Rate limited.
 # If LOGGING equals true (LOGGING=true) traffic is being logged.
 LOGGING=true
-LOGLIMIT='-m limit --limit 1/min --limit-burst 1'
+if [ $LOGGING = true ]; then
+  LOGINPUTCHAIN=LOGINPUT
+  LOGOUTPUTCHAIN=LOGOUTPUT
+  LOGLIMIT='1/min'
+  LOGLIMITBURST='1'
+fi
 
 ####################### CONFIGURATION ENDS HERE ################################
 
@@ -76,6 +81,19 @@ $IPTABLES -A $SSHCHAIN -p tcp --dport 22 -m state --state NEW -m recent --update
 $IPTABLES -A $SSHCHAIN -p tcp --dport 22 -m state --state NEW -m recent --set --name SSHBLOCK --rsource
 $IPTABLES -A $SSHCHAIN -p tcp --dport 22 -j ACCEPT
 
+# If LOGGING is true connections are passed through this chain
+if [ $LOGGING = true ]; then
+  $IPTABLES -N $LOGINPUTCHAIN
+  $IPTABLES -A $LOGINPUTCHAIN -p tcp -m limit --limit $LOGLIMIT --limit-burst $LOGLIMITBURST -j LOG --log-prefix 'INPUT TCP: '
+  $IPTABLES -A $LOGINPUTCHAIN -p udp -m limit --limit $LOGLIMIT --limit-burst $LOGLIMITBURST -j LOG --log-prefix 'INPUT UDP: '
+  $IPTABLES -A $LOGINPUTCHAIN -p icmp -m limit --limit $LOGLIMIT --limit-burst $LOGLIMITBURST -j LOG --log-prefix 'INPUT ICMP: '
+  
+  $IPTABLES -N $LOGOUTPUTCHAIN
+  $IPTABLES -A $LOGOUTPUTCHAIN -p tcp -m limit --limit $LOGLIMIT --limit-burst $LOGLIMITBURST -j LOG --log-prefix 'OUTPUT TCP: '
+  $IPTABLES -A $LOGOUTPUTCHAIN -p udp -m limit --limit $LOGLIMIT --limit-burst $LOGLIMITBURST -j LOG --log-prefix 'OUTPUT UDP: '
+  $IPTABLES -A $LOGOUTPUTCHAIN -p icmp -m limit --limit $LOGLIMIT --limit-burst $LOGLIMITBURST -j LOG --log-prefix 'OUTPUT ICMP: '
+fi
+
 ####################### IPTABLES INPUT RULES ###################################
 
 # Accept all incomming connections which is related or already established
@@ -103,7 +121,7 @@ $IPTABLES -A INPUT -p icmp --icmp-type 8 -d $IP -j ACCEPT
 $IPTABLES -A INPUT -m pkttype --pkt-type broadcast -j DROP
 
 if [ $LOGGING = true ]; then
-  ${IPTABLES} -A INPUT ${LOGLIMIT} -j LOG
+  $IPTABLES -A INPUT -j $LOGINPUTCHAIN
 fi
 
 
@@ -148,7 +166,7 @@ $IPTABLES -A OUTPUT -d $BCAST -j ACCEPT
 $IPTABLES -A OUTPUT -d 255.255.255.255 -j ACCEPT
 
 if [ $LOGGING = true ]; then
-  ${IPTABLES} -A OUTPUT ${LOGLIMIT} -j LOG
+  $IPTABLES -A OUTPUT -j $LOGOUTPUTCHAIN
 fi
 
 # vim: set expandtab ts=2 sw=2:
