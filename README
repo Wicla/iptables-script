@@ -3,5 +3,9 @@ Currently they're seperated in two different directories:
  * client
  * server
 
-There're at least two branches, main and locallyModified.
-locallyModified contains a version where ports are opened.
+The server directory contains a script for standalone server (no forwarding)
+and one script for gateway (forwarding, TODO).
+
+The client directory contains a script which should be used with clients,
+however it was made as a script called by wicd (network manager). Not much
+needs to be commented out however to remove that feature, if not needed.
