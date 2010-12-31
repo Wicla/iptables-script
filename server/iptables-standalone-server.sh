@@ -128,7 +128,7 @@ done
 # Accept incomming icmp-requests
 $IPTABLES -A INPUT -p icmp --icmp-type 8 -d $IP -j ACCEPT
 # Block incomming brodcast
-$IPTABLES -A INPUT -m pkttype --pkt-type broadcast -j DROP
+$IPTABLES -A INPUT -m pkttype --pkt-type broadcast -d $IP -j DROP
 
 # Check if INPUT should be logged
 if [ $LOGGING = true -o $(echo $LOGGING | tr [:lower:] [:upper:]) = INPUT ]; then
@@ -137,9 +137,9 @@ fi
 
 
 # Be polite and reject packages instead of just dropping them, to a limit.
-$IPTABLES -A INPUT -p icmp $LIMIT -j REJECT --reject-with icmp-admin-prohibited
-$IPTABLES -A INPUT -p udp $LIMIT -j REJECT --reject-with icmp-port-unreachable
-$IPTABLES -A INPUT -p tcp $LIMIT -j REJECT --reject-with tcp-reset
+$IPTABLES -A INPUT -p icmp $LIMIT -d $IP -j REJECT --reject-with icmp-admin-prohibited
+$IPTABLES -A INPUT -p udp $LIMIT -d $IP -j REJECT --reject-with icmp-port-unreachable
+$IPTABLES -A INPUT -p tcp $LIMIT -d $IP -j REJECT --reject-with tcp-reset
 
 
 ####################### IPTABLES OUTPUT RULES ##################################
@@ -173,8 +173,8 @@ done
 $IPTABLES -A OUTPUT -p icmp --icmp-type 8 -s $IP -j ACCEPT
 
 # Accept outgoing broadcast messages
-$IPTABLES -A OUTPUT -d $BCAST -j ACCEPT
-$IPTABLES -A OUTPUT -d 255.255.255.255 -j ACCEPT
+$IPTABLES -A OUTPUT -d $BCAST -s $IP -j ACCEPT
+$IPTABLES -A OUTPUT -d 255.255.255.255 -s $IP -j ACCEPT
 
 # Check if OUTPUT should be logged
 if [ $LOGGING = true -o $(echo $LOGGING | tr [:lower:] [:upper:]) = OUTPUT ]; then
