@@ -134,7 +134,7 @@ done
 # Accept incomming icmp-requests
 $IPTABLES -A INPUT -p icmp --icmp-type 8 -d $IP -j ACCEPT
 # Block incomming brodcast
-$IPTABLES -A INPUT -m pkttype --pkt-type broadcast -d $IP -j DROP
+$IPTABLES -A INPUT -m pkttype --pkt-type broadcast -j DROP
 
 # Check if INPUT should be logged
 if [ $LOGGING = true -o $(echo $LOGGING | tr [:lower:] [:upper:]) = INPUT ]; then
