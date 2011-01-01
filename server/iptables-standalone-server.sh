@@ -9,6 +9,7 @@
 # * loopback (lo) connections
 # * SSH connections (goes through PROTECTSSH chain)
 # * ICMP requests
+# * Dynamically definied ports (arrays)
 
 # Following is a list of allowed OUTPUT traffic.
 # * RELATED and ESTABLISHED connections
@@ -18,14 +19,15 @@
 # * HTTP/HTTPS connections
 # * Broadcasts
 # * ICMP requests
+# * Dynamically definied ports (arrays)
 
 ####################### CONFIGURATION BEGINS HERE ##############################
 
 # IF is your interface. Normally eth0.
 IF=eth0
 
+# Dynamically opened ports. Whitespace separates each value. Both port number and service name allowed (see /etc/services)
 # IN_TCP_PORTS, IN_UDP_PORTS, OUT_TCP_PORTS and OUT_UDP_PORTS are arrays. Please enter each port number (or service name) seperated by space.
-# Dynamically opened ports. Whitespace equals new value. Both port number and service name allowed (see /etc/services)
 IN_TCP_PORTS=( ) 
 IN_UDP_PORTS=( )
 OUT_TCP_PORTS=( )
