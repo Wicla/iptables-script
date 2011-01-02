@@ -46,7 +46,7 @@ BCAST=($(ifconfig $IF)); BCAST=$(echo ${IP[7]#*:})
 # * true    -- Logs both INPUT and OUTPUT
 # * input   -- Logs INPUT
 # * output  -- Logs OUTPUT
-LOGGING=true
+LOGGING=false
 if [ $LOGGING = true \
   -o $(echo $LOGGING | tr [:lower:] [:upper:]) = INPUT \
   -o $(echo $LOGGING | tr [:lower:] [:upper:]) = OUTPUT ]; then
