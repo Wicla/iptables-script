@@ -4,9 +4,8 @@
 # There're also arrays which can be filled with ports which is wanted to be allowed (in all directions and protocol).
 # Default policy is set to DROP all unmatched traffic in both directions.
 #
-# Since this script was written as a script executed by wicd (network manager) it has some code which allows integration with wicd.
-# To disable this code just comment out/remove the code related to wicd (it's clearly marked out further down in the script).
-# It gets either wired or wireless as argument which decides which interface the rules are to based upon.
+# This script supports to be used as a script to wicd (network manager). To use this feature changed USEWICD to true.
+# It accepts either wired or wireless as argument Argument decides which interface the rules are to based upon.
 #
 # Connections passing through INPUT (incoming):
 # * RELATED and ESTABLISHED connections
@@ -26,22 +25,13 @@
 
 ####################### CONFIGURATION BEGINS HERE ##############################
 
-# This section is used by wicd (called as a script on connect). If you're not using it, comment according to guidelines.
-# Variable $IF contains your IP-address. It's from this value it gets the source/destination IP- and broadcast-address to allow.
-## COMMENT THIS SECTION IF NOT USED ##
-if [ "$1" == "wireless" ]; then
-  IF=wlan0
-elif [ "$1" == "wired" ]; then
-  IF=eth0
-else
-  echo 'Something is wrong.'
-  echo 'Missing argument (which should be wireless or wired)'
-  echo 'Exiting.'
-  exit 1.
-fi
-## END COMMENTING ##
-# Set this variable to a suitable value instead (eth0 for example).
-#IF=eth0
+# Set USEWICD to true be able to use this script as a wicd script.
+USEWICD=true
+
+# NICs. Only LANIF is needed to be configured if WLAN isn't used.
+# Configure interfaces correctly. It's from this value it gets the source/destination IP- and broadcast-address to allow.
+LANIF=eth0
+WLANIF=wlan0
 
 # Dynamically opened ports. Whitespace separates each value. Both port number and service name allowed (see /etc/services)
 # IN_TCP_PORTS, IN_UDP_PORTS, OUT_TCP_PORTS and OUT_UDP_PORTS are arrays. Please enter each port number (or service name) seperated by space.
@@ -52,6 +42,23 @@ OUT_UDP_PORTS=( )
 
 # Used for reject (if no INPUT connection is matched). Reject first 10 packets each 10 minute, then just drop them. 
 LIMIT="-m hashlimit --hashlimit 10/minute --hashlimit-burst 10 --hashlimit-mode srcip --hashlimit-name limreject"
+
+# This section is used by wicd (called as a script on connect).
+# Variable $IF contains your NIC. Please make sure this value is correct. 
+if [ $USEWICD == true ]; then
+  if [ "$1" == 'wireless' ]; then
+    IF=$WLANIF
+  elif [ "$1" == 'wired' ]; then
+    IF=$LANIF
+  else
+    echo 'Something is wrong.'
+    echo 'Missing argument (which should be wireless or wired)'
+    echo 'Exiting.'
+    exit 1
+  fi
+else
+  IF=$LANIF
+fi
 
 # IP contains the IP-address of interface $IF
 # BCAST contains the broadcast address of interface $IF
