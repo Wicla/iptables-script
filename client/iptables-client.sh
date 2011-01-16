@@ -26,7 +26,7 @@
 ####################### CONFIGURATION BEGINS HERE ##############################
 
 # Set USEWICD to true be able to use this script as a wicd script.
-USEWICD=true
+USEWICD=false
 
 # NICs. Only LANIF is needed to be configured if WLAN isn't used.
 # Configure interfaces correctly. It's from this value it gets the source/destination IP- and broadcast-address to allow.
