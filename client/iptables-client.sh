@@ -23,6 +23,12 @@
 # * ICMP requests
 # * Dynamically definied ports (arrays)
 
+# Test if user has super privileges
+if [ $(id -u) -ne 0 ]; then
+  echo 'This script requires to be run as root.'
+  exit 1
+fi
+
 ####################### CONFIGURATION BEGINS HERE ##############################
 
 # Set USEWICD to true be able to use this script as a wicd script.
