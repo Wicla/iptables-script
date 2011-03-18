@@ -9,3 +9,42 @@ and one script for gateway (forwarding, TODO).
 The client directory contains a script which should be used with clients,
 however it was made as a script called by wicd (network manager). Not much
 needs to be commented out however to remove that feature, if not needed.
+
+Required kernel options:
+
+Network packet filtering framework (Netfilter)
+  * Advanced netfilter configuration
+or:
+  CONFIG_NETFILTER_ADVANCED
+
+Core Netfilter Configuration ->
+  * Netfilter connection tracking support
+  * Netfilter Xtables support (required for ip_tables)
+  * "hashlimit" match support
+  * "limit" match support
+  * "multiport" Multiple port match support
+  * "pkttype" packet type match support
+  * "recent" match support
+  * "state" match support
+or: 
+  CONFIG_NF_CONNTRACK 
+  CONFIG_NETFILTER_XTABLES
+  CONFIG_NETFILTER_XT_MATCH_HASHLIMIT
+  CONFIG_NETFILTER_XT_MATCH_LIMIT
+  CONFIG_NETFILTER_XT_MATCH_MULTIPORT
+  CONFIG_NETFILTER_XT_MATCH_PKTTYPE
+  CONFIG_NETFILTER_XT_MATCH_RECENT
+  CONFIG_NETFILTER_XT_MATCH_STATE
+
+IP: Netfilter Configuration ->
+  * IPv4 connection tracking support (required for NAT)
+  * IP tables support (required for filtering/masq/NAT)
+  * Packet filtering 
+    * REJECT target support
+  * LOG target support
+or:
+  CONFIG_NF_CONNTRACK_IPV4
+  CONFIG_IP_NF_IPTABLES
+  CONFIG_IP_NF_FILTER
+  CONFIG_IP_NF_TARGET_REJECT
+  CONFIG_IP_NF_TARGET_LOG
