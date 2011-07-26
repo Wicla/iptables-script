@@ -33,11 +33,11 @@ fi
 IF=eth0
 
 # Dynamically opened ports. Whitespace separates each value. Both port number and service name allowed (see /etc/services)
-# IN_TCP_PORTS, IN_UDP_PORTS, OUT_TCP_PORTS and OUT_UDP_PORTS are arrays. Please enter each port number (or service name) seperated by space.
-IN_TCP_PORTS=( ) 
-IN_UDP_PORTS=( )
-OUT_TCP_PORTS=( )
-OUT_UDP_PORTS=( )
+# PORTS_TCPIN, PORTS_UDPIN, PORTS_TCPOUT and PORTS_UDPOUT are arrays. Please enter each port number (or service name) seperated by space.
+PORTS_TCPIN=( )
+PORTS_UDPIN=( )
+PORTS_TCPOUT=( )
+PORTS_UDPOUT=( )
 
 # Used for reject (if no INPUT connection is matched). Reject first 10 packets each 10 minute, then just drop them. 
 LIMIT="-m hashlimit --hashlimit 10/minute --hashlimit-burst 10 --hashlimit-mode srcip --hashlimit-name limreject"
@@ -123,13 +123,13 @@ $IPTABLES -A INPUT -i lo -j ACCEPT
 # Send SSH connections to $CHAIN_SSH chain.
 $IPTABLES -A INPUT -p tcp --dport 22 -d $IP -j $CHAIN_SSH
 
-# Accept all custom TCP-ports defined by $IN_TCP_PORTS
-for TCPPORT in ${IN_TCP_PORTS[@]}; do
+# Accept all custom TCP-ports defined by $PORTS_TCPIN
+for TCPPORT in ${PORTS_TCPIN[@]}; do
   $IPTABLES -A INPUT -p tcp --dport $TCPPORT -d $IP -j ACCEPT
 done
 
-# Accept all custom UDP-ports defined by $IN_UDP_PORTS
-for UDPPORT in ${IN_UDP_PORTS[@]}; do
+# Accept all custom UDP-ports defined by $PORTS_UDPIN
+for UDPPORT in ${PORTS_UDPIN[@]}; do
   $IPTABLES -A INPUT -p udp --dport $UDPPORT -d $IP -j ACCEPT
 done
 
@@ -166,13 +166,13 @@ $IPTABLES -A OUTPUT -p tcp --dport 22 -s $IP -j ACCEPT
 $IPTABLES -A OUTPUT -p tcp --dport 20:21 -s $IP -j ACCEPT
 $IPTABLES -A OUTPUT -p tcp -m multiport --dports 80,443 -s $IP -j ACCEPT
 
-# Accept all custom TCP-ports defined by $OUT_UDP_PORTS
-for TCPPORT in ${OUT_TCP_PORTS[@]}; do
+# Accept all custom TCP-ports defined by $PORTS_UDPOUT
+for TCPPORT in ${PORTS_TCPOUT[@]}; do
   $IPTABLES -A OUTPUT -p tcp --dport $TCPPORT -s $IP -j ACCEPT
 done
 
-# Accept all custom UDP-ports defined by $OUT_UDP_PORTS
-for UDPPORT in ${OUT_UDP_PORTS[@]}; do
+# Accept all custom UDP-ports defined by $PORTS_UDPOUT
+for UDPPORT in ${PORTS_UDPOUT[@]}; do
   $IPTABLES -A OUTPUT -p udp --dport $UDPPORT -s $IP -j ACCEPT
 done
 
