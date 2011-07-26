@@ -29,8 +29,8 @@ fi
 
 ####################### CONFIGURATION BEGINS HERE ##############################
 
-# IF is your interface. Normally eth0.
-IF=eth0
+# HOST_IF is your interface. Normally eth0.
+HOST_IF=eth0
 
 # Dynamically opened ports. Whitespace separates each value. Both port number and service name allowed (see /etc/services)
 # PORTS_TCPIN, PORTS_UDPIN, PORTS_TCPOUT and PORTS_UDPOUT are arrays. Please enter each port number (or service name) seperated by space.
@@ -42,10 +42,10 @@ PORTS_UDPOUT=( )
 # Used for reject (if no INPUT connection is matched). Reject first 10 packets each 10 minute, then just drop them. 
 LIMIT="-m hashlimit --hashlimit 10/minute --hashlimit-burst 10 --hashlimit-mode srcip --hashlimit-name limreject"
 
-# IP contains the IP-address of interface $IF
-# BCAST contains the broadcast address of interface $IF
-IP=($(ifconfig $IF)); IP=$(echo ${IP[6]#*:})
-BCAST=($(ifconfig $IF)); BCAST=$(echo ${IP[7]#*:})
+# HOST_IP contains the IP-address of interface $HOST_IF
+# HOST_HOST_BCAST contains the broadcast address of interface $HOST_IF
+HOST_IP=($(ifconfig $HOST_IF)); HOST_IP=$(echo ${HOST_IP[6]#*:})
+HOST_BCAST=($(ifconfig $HOST_IF)); HOST_BCAST=$(echo ${HOST_IP[7]#*:})
 
 # LOGGING defines if unmatched connections should be logged.
 # Possibles values are following:
@@ -121,20 +121,20 @@ $IPTABLES -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
 $IPTABLES -A INPUT -i lo -j ACCEPT
 
 # Send SSH connections to $CHAIN_SSH chain.
-$IPTABLES -A INPUT -p tcp --dport 22 -d $IP -j $CHAIN_SSH
+$IPTABLES -A INPUT -p tcp --dport 22 -d $HOST_IP -j $CHAIN_SSH
 
 # Accept all custom TCP-ports defined by $PORTS_TCPIN
 for TCPPORT in ${PORTS_TCPIN[@]}; do
-  $IPTABLES -A INPUT -p tcp --dport $TCPPORT -d $IP -j ACCEPT
+  $IPTABLES -A INPUT -p tcp --dport $TCPPORT -d $HOST_IP -j ACCEPT
 done
 
 # Accept all custom UDP-ports defined by $PORTS_UDPIN
 for UDPPORT in ${PORTS_UDPIN[@]}; do
-  $IPTABLES -A INPUT -p udp --dport $UDPPORT -d $IP -j ACCEPT
+  $IPTABLES -A INPUT -p udp --dport $UDPPORT -d $HOST_IP -j ACCEPT
 done
 
 # Accept incoming icmp-requests (ping)
-$IPTABLES -A INPUT -p icmp --icmp-type 8 -d $IP -j ACCEPT
+$IPTABLES -A INPUT -p icmp --icmp-type 8 -d $HOST_IP -j ACCEPT
 # Block incoming brodcast
 $IPTABLES -A INPUT -m pkttype --pkt-type broadcast -j DROP
 
@@ -144,9 +144,9 @@ if [ $LOGGING = true -o $(echo $LOGGING | tr [:lower:] [:upper:]) = INPUT ]; the
 fi
 
 # Be polite and reject packages instead of dropping them, to a limit.
-$IPTABLES -A INPUT -p icmp $LIMIT -d $IP -j REJECT --reject-with icmp-admin-prohibited
-$IPTABLES -A INPUT -p udp $LIMIT -d $IP -j REJECT --reject-with icmp-port-unreachable
-$IPTABLES -A INPUT -p tcp $LIMIT -d $IP -j REJECT --reject-with tcp-reset
+$IPTABLES -A INPUT -p icmp $LIMIT -d $HOST_IP -j REJECT --reject-with icmp-admin-prohibited
+$IPTABLES -A INPUT -p udp $LIMIT -d $HOST_IP -j REJECT --reject-with icmp-port-unreachable
+$IPTABLES -A INPUT -p tcp $LIMIT -d $HOST_IP -j REJECT --reject-with tcp-reset
 
 
 ####################### IPTABLES OUTPUT RULES ##################################
@@ -158,30 +158,30 @@ $IPTABLES -A OUTPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
 $IPTABLES -A OUTPUT -o lo -j ACCEPT
 
 # Accept dns lookups (udp and tcp)
-$IPTABLES -A OUTPUT -p tcp --dport 53 -s $IP -j ACCEPT
-$IPTABLES -A OUTPUT -p udp --dport 53 -s $IP -j ACCEPT
+$IPTABLES -A OUTPUT -p tcp --dport 53 -s $HOST_IP -j ACCEPT
+$IPTABLES -A OUTPUT -p udp --dport 53 -s $HOST_IP -j ACCEPT
 
 # Accept outgoing SSH, HTTP and FTP connections.
-$IPTABLES -A OUTPUT -p tcp --dport 22 -s $IP -j ACCEPT
-$IPTABLES -A OUTPUT -p tcp --dport 20:21 -s $IP -j ACCEPT
-$IPTABLES -A OUTPUT -p tcp -m multiport --dports 80,443 -s $IP -j ACCEPT
+$IPTABLES -A OUTPUT -p tcp --dport 22 -s $HOST_IP -j ACCEPT
+$IPTABLES -A OUTPUT -p tcp --dport 20:21 -s $HOST_IP -j ACCEPT
+$IPTABLES -A OUTPUT -p tcp -m multiport --dports 80,443 -s $HOST_IP -j ACCEPT
 
 # Accept all custom TCP-ports defined by $PORTS_UDPOUT
 for TCPPORT in ${PORTS_TCPOUT[@]}; do
-  $IPTABLES -A OUTPUT -p tcp --dport $TCPPORT -s $IP -j ACCEPT
+  $IPTABLES -A OUTPUT -p tcp --dport $TCPPORT -s $HOST_IP -j ACCEPT
 done
 
 # Accept all custom UDP-ports defined by $PORTS_UDPOUT
 for UDPPORT in ${PORTS_UDPOUT[@]}; do
-  $IPTABLES -A OUTPUT -p udp --dport $UDPPORT -s $IP -j ACCEPT
+  $IPTABLES -A OUTPUT -p udp --dport $UDPPORT -s $HOST_IP -j ACCEPT
 done
 
 # Accept outgoing icmp-requests
-$IPTABLES -A OUTPUT -p icmp --icmp-type 8 -s $IP -j ACCEPT
+$IPTABLES -A OUTPUT -p icmp --icmp-type 8 -s $HOST_IP -j ACCEPT
 
 # Accept outgoing broadcast messages
-$IPTABLES -A OUTPUT -d $BCAST -s $IP -j ACCEPT
-$IPTABLES -A OUTPUT -d 255.255.255.255 -s $IP -j ACCEPT
+$IPTABLES -A OUTPUT -d $HOST_BCAST -s $HOST_IP -j ACCEPT
+$IPTABLES -A OUTPUT -d 255.255.255.255 -s $HOST_IP -j ACCEPT
 
 # Decide if logging unmatched OUTPUT traffic is to be done.
 if [ $LOGGING = true -o $(echo $LOGGING | tr [:lower:] [:upper:]) = OUTPUT ]; then
