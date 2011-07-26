@@ -7,7 +7,7 @@
 # Connections passing through INPUT (incoming):
 # * RELATED and ESTABLISHED connections
 # * loopback (lo) connections
-# * SSH connections (passed through chain $SSHCHAIN for bruteforce protection)
+# * SSH connections (passed through chain $CHAIN_SSH for bruteforce protection)
 # * ICMP requests (allow ping)
 # * Dynamically definied ports (arrays)
 #
@@ -57,8 +57,8 @@ if [ $LOGGING = true \
   -o $(echo $LOGGING | tr [:lower:] [:upper:]) = INPUT \
   -o $(echo $LOGGING | tr [:lower:] [:upper:]) = OUTPUT ]; then
 # Chain for INPUT and OUTPUT for LOGGING
-  LOGINPUTCHAIN=LOGINPUT
-  LOGOUTPUTCHAIN=LOGOUTPUT
+  CHAIN_LOGINPUT=LOGINPUT
+  CHAIN_LOGOUTPUT=LOGOUTPUT
 # Loglimit and loglimitburst
   LOGLIMIT='1/min'
   LOGLIMITBURST='1'
@@ -90,26 +90,26 @@ $IPTABLES -P FORWARD DROP
 
 # Chains which protects against bruteforce acctions on SSH.
 # If more than 5 connection on SSH (22) port occur within 60 seconds from the same IP it gets blocked for 60 seconds.
-SSHCHAIN=PROTECTSSH
-$IPTABLES -N $SSHCHAIN
-$IPTABLES -A $SSHCHAIN -p tcp --dport 22 -m state --state NEW -m recent --update --seconds 60 --hitcount 5 --name SSHBLOCK --rsource -j DROP
-$IPTABLES -A $SSHCHAIN -p tcp --dport 22 -m state --state NEW -m recent --set --name SSHBLOCK --rsource
-$IPTABLES -A $SSHCHAIN -p tcp --dport 22 -j ACCEPT
+CHAIN_SSH=PROTECTSSH
+$IPTABLES -N $CHAIN_SSH
+$IPTABLES -A $CHAIN_SSH -p tcp --dport 22 -m state --state NEW -m recent --update --seconds 60 --hitcount 5 --name SSHBLOCK --rsource -j DROP
+$IPTABLES -A $CHAIN_SSH -p tcp --dport 22 -m state --state NEW -m recent --set --name SSHBLOCK --rsource
+$IPTABLES -A $CHAIN_SSH -p tcp --dport 22 -j ACCEPT
 
 # If LOGGING is true or matches 'INPUT' - INPUT connections are passed through this chain
 if [ $LOGGING = true -o $(echo $LOGGING | tr [:lower:] [:upper:]) = INPUT ]; then
-  $IPTABLES -N $LOGINPUTCHAIN
-  $IPTABLES -A $LOGINPUTCHAIN -p tcp -m limit --limit $LOGLIMIT --limit-burst $LOGLIMITBURST -j LOG --log-prefix 'INPUT TCP: '
-  $IPTABLES -A $LOGINPUTCHAIN -p udp -m limit --limit $LOGLIMIT --limit-burst $LOGLIMITBURST -j LOG --log-prefix 'INPUT UDP: '
-  $IPTABLES -A $LOGINPUTCHAIN -p icmp -m limit --limit $LOGLIMIT --limit-burst $LOGLIMITBURST -j LOG --log-prefix 'INPUT ICMP: '
+  $IPTABLES -N $CHAIN_LOGINPUT
+  $IPTABLES -A $CHAIN_LOGINPUT -p tcp -m limit --limit $LOGLIMIT --limit-burst $LOGLIMITBURST -j LOG --log-prefix 'INPUT TCP: '
+  $IPTABLES -A $CHAIN_LOGINPUT -p udp -m limit --limit $LOGLIMIT --limit-burst $LOGLIMITBURST -j LOG --log-prefix 'INPUT UDP: '
+  $IPTABLES -A $CHAIN_LOGINPUT -p icmp -m limit --limit $LOGLIMIT --limit-burst $LOGLIMITBURST -j LOG --log-prefix 'INPUT ICMP: '
 fi
 
 # If LOGGING is true or matches 'OUTPUT' - OUTPUT connections are passed through this chain
 if [ $LOGGING = true -o $(echo $LOGGING | tr [:lower:] [:upper:]) = OUTPUT ]; then
-  $IPTABLES -N $LOGOUTPUTCHAIN
-  $IPTABLES -A $LOGOUTPUTCHAIN -p tcp -m limit --limit $LOGLIMIT --limit-burst $LOGLIMITBURST -j LOG --log-prefix 'OUTPUT TCP: '
-  $IPTABLES -A $LOGOUTPUTCHAIN -p udp -m limit --limit $LOGLIMIT --limit-burst $LOGLIMITBURST -j LOG --log-prefix 'OUTPUT UDP: '
-  $IPTABLES -A $LOGOUTPUTCHAIN -p icmp -m limit --limit $LOGLIMIT --limit-burst $LOGLIMITBURST -j LOG --log-prefix 'OUTPUT ICMP: '
+  $IPTABLES -N $CHAIN_LOGOUTPUT
+  $IPTABLES -A $CHAIN_LOGOUTPUT -p tcp -m limit --limit $LOGLIMIT --limit-burst $LOGLIMITBURST -j LOG --log-prefix 'OUTPUT TCP: '
+  $IPTABLES -A $CHAIN_LOGOUTPUT -p udp -m limit --limit $LOGLIMIT --limit-burst $LOGLIMITBURST -j LOG --log-prefix 'OUTPUT UDP: '
+  $IPTABLES -A $CHAIN_LOGOUTPUT -p icmp -m limit --limit $LOGLIMIT --limit-burst $LOGLIMITBURST -j LOG --log-prefix 'OUTPUT ICMP: '
 fi
 
 ####################### IPTABLES INPUT RULES ###################################
@@ -120,8 +120,8 @@ $IPTABLES -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
 # Accept connections from loopback
 $IPTABLES -A INPUT -i lo -j ACCEPT
 
-# Send SSH connections to $SSHCHAIN chain.
-$IPTABLES -A INPUT -p tcp --dport 22 -d $IP -j $SSHCHAIN
+# Send SSH connections to $CHAIN_SSH chain.
+$IPTABLES -A INPUT -p tcp --dport 22 -d $IP -j $CHAIN_SSH
 
 # Accept all custom TCP-ports defined by $IN_TCP_PORTS
 for TCPPORT in ${IN_TCP_PORTS[@]}; do
@@ -140,7 +140,7 @@ $IPTABLES -A INPUT -m pkttype --pkt-type broadcast -j DROP
 
 # Decide if logging unmatched INPUT traffic is to be done.
 if [ $LOGGING = true -o $(echo $LOGGING | tr [:lower:] [:upper:]) = INPUT ]; then
-  $IPTABLES -A INPUT -j $LOGINPUTCHAIN
+  $IPTABLES -A INPUT -j $CHAIN_LOGINPUT
 fi
 
 # Be polite and reject packages instead of dropping them, to a limit.
@@ -185,7 +185,7 @@ $IPTABLES -A OUTPUT -d 255.255.255.255 -s $IP -j ACCEPT
 
 # Decide if logging unmatched OUTPUT traffic is to be done.
 if [ $LOGGING = true -o $(echo $LOGGING | tr [:lower:] [:upper:]) = OUTPUT ]; then
-  $IPTABLES -A OUTPUT -j $LOGOUTPUTCHAIN
+  $IPTABLES -A OUTPUT -j $CHAIN_LOGOUTPUT
 fi
 
 # vim: set expandtab ts=2 sw=2:
