@@ -41,7 +41,7 @@ PORTS_TCPOUT=( )
 PORTS_UDPOUT=( )
 
 # BLACKLISTED_IPS is a array which contains IP-address which are blocked on the INPUT chain. Separate each value with space.
-# They are later added to the chain defined by $
+# They are later added to the chain defined by $CHAIN_BLOCKEDIP
 BLACKLISTED_IPS=( )
 
 # Used for reject (if no INPUT connection is matched). Reject first 10 packets each 10 minute, then just drop them. 
