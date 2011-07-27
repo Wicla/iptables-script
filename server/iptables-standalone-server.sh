@@ -7,6 +7,7 @@
 # Connections passing through INPUT (incoming):
 # * RELATED and ESTABLISHED connections
 # * loopback (lo) connections
+# * Connections are sent to chain defined by $CHAIN_BLOCKEDIP where IP-addresses included in $BLACKLISTEDIPS gets blocked.
 # * SSH connections (passed through chain $CHAIN_SSH for bruteforce protection)
 # * ICMP requests (allow ping)
 # * Dynamically definied ports (arrays)
@@ -38,6 +39,10 @@ PORTS_TCPIN=( )
 PORTS_UDPIN=( )
 PORTS_TCPOUT=( )
 PORTS_UDPOUT=( )
+
+# BLACKLISTED_IPS is a array which contains IP-address which are blocked on the INPUT chain. Separate each value with space.
+# They are later added to the chain defined by $
+BLACKLISTED_IPS=( )
 
 # Used for reject (if no INPUT connection is matched). Reject first 10 packets each 10 minute, then just drop them. 
 LIMIT="-m hashlimit --hashlimit 10/minute --hashlimit-burst 10 --hashlimit-mode srcip --hashlimit-name limreject"
@@ -96,6 +101,12 @@ $IPTABLES -A $CHAIN_SSH -p tcp --dport 22 -m state --state NEW -m recent --updat
 $IPTABLES -A $CHAIN_SSH -p tcp --dport 22 -m state --state NEW -m recent --set --name SSHBLOCK --rsource
 $IPTABLES -A $CHAIN_SSH -p tcp --dport 22 -j ACCEPT
 
+CHAIN_BLOCKEDIP=BLACKLISTEDIP
+$IPTABLES -N $CHAIN_BLOCKEDIP
+for BLOCKEDIP in ${BLACKLISTED_IPS[@]}; do
+  $IPTABLES -A $CHAIN_BLOCKEDIP -s $BLOCKEDIP -d $HOST_IP -j DROP
+done
+
 # If LOGGING is true or matches 'INPUT' - INPUT connections are passed through this chain
 if [ $LOGGING = true -o $(echo $LOGGING | tr [:lower:] [:upper:]) = INPUT ]; then
   $IPTABLES -N $CHAIN_LOGINPUT
@@ -119,6 +130,9 @@ $IPTABLES -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
 
 # Accept connections from loopback
 $IPTABLES -A INPUT -i lo -j ACCEPT
+
+# Send all connections through $CHAIN_BLOCKEDIP to drop connections from blacklisted IPs
+$IPTABLES -A INPUT -j $CHAIN_BLOCKEDIP
 
 # Send SSH connections to $CHAIN_SSH chain.
 $IPTABLES -A INPUT -p tcp --dport 22 -d $HOST_IP -j $CHAIN_SSH
