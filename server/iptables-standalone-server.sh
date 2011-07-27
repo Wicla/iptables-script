@@ -45,7 +45,7 @@ LIMIT="-m hashlimit --hashlimit 10/minute --hashlimit-burst 10 --hashlimit-mode 
 # HOST_IP contains the IP-address of interface $HOST_IF
 # HOST_HOST_BCAST contains the broadcast address of interface $HOST_IF
 HOST_IP=($(ifconfig $HOST_IF)); HOST_IP=$(echo ${HOST_IP[6]#*:})
-HOST_BCAST=($(ifconfig $HOST_IF)); HOST_BCAST=$(echo ${HOST_IP[7]#*:})
+HOST_BCAST=($(ifconfig $HOST_IF)); HOST_BCAST=$(echo ${HOST_BCAST[7]#*:})
 
 # LOGGING defines if unmatched connections should be logged.
 # Possibles values are following:
