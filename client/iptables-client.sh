@@ -73,6 +73,7 @@ HOST_BCAST=($(ifconfig $HOST_IF)); HOST_BCAST=$(echo ${HOST_BCAST[7]#*:})
 
 # LOGGING defines if unmatched connections should be logged.
 # Possibles values are following:
+# * false   -- Nothing is logged (defaults to false)
 # * true    -- Logs both INPUT and OUTPUT
 # * input   -- Logs INPUT
 # * output  -- Logs OUTPUT
